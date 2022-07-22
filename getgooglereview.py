@@ -3,12 +3,14 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
+from alive_progress import alive_bar
 
 import bs4
 import pandas as pd
 import time
 import csv
 import os.path
+import os
 
 def scrollandload(driver):
     data = driver.page_source
@@ -18,12 +20,17 @@ def scrollandload(driver):
     loaded = 0
     n = 5
     count = 0
-    while loaded < allcomment:
+    while loaded < allcomment:        
         i = 0
+
+        countPagedown = 0
         while i < n:
             html = driver.find_elements(By.CLASS_NAME,'DxyBCb')
-            html[0].send_keys(Keys.PAGE_DOWN)
-            i += 1
+            html[0].send_keys(Keys.PAGE_DOWN)          
+
+            progressicon = driver.find_elements(By.CLASS_NAME, 'qjESne')
+            i += 1        
+
         data = driver.page_source
         soup = bs4.BeautifulSoup(data, "lxml")
         currentload = soup.find_all('div',{'class':'jftiEf fontBodyMedium'})
@@ -32,12 +39,11 @@ def scrollandload(driver):
             count += 1
         
         loaded = len(currentload)
-        print('get ' + str(loaded) + ':' + str(allcomment))
 
         if count == 2:
             break
         
-        n *= 2
+        n *= 2            
 
 def convertTime(ttext):
 
@@ -47,7 +53,7 @@ def convertTime(ttext):
         if tsplited > 9:
             return double(1)
         else:
-            tsplited = "0." + tsplited
+            tsplited = tsplited / 10
             return double(tsplited)
     
     if "ปี" in ttext:
@@ -67,21 +73,24 @@ def loaddata(driver):
     list_time = []
     list_comment = []
 
-    for x in all_review_score:    
-        name = x['aria-label']
-        profiles = x.findChildren('div',{'class':'DU9Pgb'})
-        pf = list(profiles)[0]
-        score = pf.findChildren('span', {'class':'kvMYJc'})[0]
-        score = score['aria-label'].split()[0]
-        stime = pf.findChildren('span', {'class':'rsqaWe'})[0]
-        stime = convertTime(stime.text)
-        comment = x.findChildren('span', {'class':'wiI7pd'})
-        comment = comment[0].text
+    with alive_bar(len(all_review_score)) as bar:
+        for x in all_review_score:
+            name = x['aria-label']
+            profiles = x.findChildren('div', {'class':'DU9Pgb'})
+            pf = list(profiles)[0]
+            score = pf.findChildren('span', {'class':'kvMYJc'})[0]
+            score = score['aria-label'].split()[0]
+            stime = pf.findChildren('span', {'class':'rsqaWe'})[0]
+            stime = convertTime(stime.text)
+            comment = x.findChildren('span', {'class':'wiI7pd'})
+            comment = comment[0].text
 
-        list_name.append(name)
-        list_score.append(score)
-        list_time.append(stime)
-        list_comment.append(comment)
+            list_name.append(name)
+            list_score.append(score)
+            list_time.append(stime)
+            list_comment.append(comment)
+            bar()
+            
 
     df = pd.DataFrame([list_name, list_score, list_time, list_comment])
     df = df.transpose()
@@ -171,9 +180,29 @@ with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
             time.sleep(3.0)
             scrollandload(driver)
             dataloaded = loaddata(driver)
+
+            parent_dir = "results"
+
+            dirxlsx= "xlsx"
+            dircsv = "csv"
+            
             #save to excel
+            path = os.path.join(parent_dir, dirxlsx)
+            try:
+                if not os.path.exists(path):
+                    os.makedirs(path, 0o666)
+            except OSError:
+                print('Fatal: output directory "' + path + '" does not exist and cannot be created')
+            
             dataloaded.to_excel('results/xlsx/' + place_name + '.xlsx', index=False, encoding='utf-8')
+
             #save to csv
+            path = os.path.join(parent_dir, dircsv)
+            try:
+                if not os.path.exists(path):
+                    os.makedirs(path, 0o666)
+            except OSError:
+                print('Fatal: output directory "' + path + '" does not exist and cannot be created')
             dataloaded.to_csv('results/csv/' + place_name + '.csv', index=False, encoding='utf-8')
         else:
             print('can\'t find review button')            
