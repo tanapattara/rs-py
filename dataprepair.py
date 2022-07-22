@@ -59,6 +59,7 @@ userdf = pd.DataFrame()
 venuedf = pd.DataFrame()
 ratingdf = pd.DataFrame()
 
+i = 1
 for venuename in onlyfiles:
     _venue = addVenue(venuedf, venuename)
     venueid = _venue[0]
@@ -68,7 +69,8 @@ for venuename in onlyfiles:
     filepath = mypath + venuename
     place = pd.read_csv(filepath)
     # loop all place
-    with alive_bar(len(place)) as bar:        
+    titlebar = f'loading venue {i}/{len(onlyfiles)}'
+    with alive_bar(len(place), title=titlebar) as bar:        
         for index, row in place.iterrows():
             username = row['name'].strip()
             _user = addUser(userdf, username)
@@ -83,6 +85,7 @@ for venuename in onlyfiles:
             ratingdf = pd.concat([ratingdf, newRating], ignore_index = True)
 
             bar()
+    i = i+1
 
 ratingdf.to_csv('data/rating.csv', sep='\t', encoding='utf-8')
 userdf.to_csv('data/user.csv', sep='\t', encoding='utf-8')
