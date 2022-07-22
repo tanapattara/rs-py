@@ -131,3 +131,6 @@ dmypy.json
 results/xlsx/
 results/csv/
 results/place.csv
+data/rating.csv
+data/user.csv
+data/venue.csv
