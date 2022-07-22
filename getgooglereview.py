@@ -1,3 +1,4 @@
+from warnings import catch_warnings
 from numpy import double
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -23,12 +24,9 @@ def scrollandload(driver):
     while loaded < allcomment:        
         i = 0
 
-        countPagedown = 0
         while i < n:
             html = driver.find_elements(By.CLASS_NAME,'DxyBCb')
-            html[0].send_keys(Keys.PAGE_DOWN)          
-
-            progressicon = driver.find_elements(By.CLASS_NAME, 'qjESne')
+            html[0].send_keys(Keys.PAGE_DOWN)    
             i += 1        
 
         data = driver.page_source
@@ -49,19 +47,24 @@ def convertTime(ttext):
 
     if "เดือน" in ttext:
         tsplited = ttext.split()
-        tsplited = int(tsplited[0])
+        try:
+            tsplited = int(tsplited[0])
+        except ValueError:
+            tsplited = 1
+
         if tsplited > 9:
             return double(1)
         else:
             tsplited = tsplited / 10
-            return double(tsplited)
-    
-    if "ปี" in ttext:
+            return double(tsplited)    
+    elif "ปี" in ttext:
         tsplited = ttext.split()
         if len(tsplited) > 1:
             return double(tsplited[0])
         else:
-            return 1.0;
+            return 1.0
+    else:
+        return 0.1
 
 def loaddata(driver):
     data = driver.page_source
@@ -120,6 +123,16 @@ def saveplacedetail(driver, lat, lon):
     place_data.columns = ['name','score','category','latitude','longitude']
     path_to_file = 'results\place.csv'
     
+    parent_dir = ""
+    dirxlsx= "results"
+    path = os.path.join(parent_dir, dirxlsx)
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path, 0o666)
+    except OSError:
+        print('Fatal: output directory "' + path + '" does not exist and cannot be created')
+            
+
     #check exist data in place.csv file
     existrecord = False
     if os.path.exists(path_to_file):
