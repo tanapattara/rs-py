@@ -1,3 +1,4 @@
+from tokenize import Number
 import numpy as np
 import pandas as pd
 import sklearn
@@ -21,14 +22,13 @@ def addUser(df, username):
             key = len(df) + 1  
             newuser = pd.DataFrame([[key, username]], columns=['userid', 'name'])    
             df = pd.concat([df, newuser], ignore_index = True)
+        else:
+            row = df.loc[df['name'] == username]
+            key = int(row['userid'])
     else:
-        newuser = pd.DataFrame([[key, username]], columns=['userid', 'name'])
-        # no data in df
-        if os.path.exists(path_to_file):
-            # load file
-            df = pd.read_csv(path_to_file)   
+        newuser = pd.DataFrame([[key, username]], columns=['userid', 'name']) 
         df = pd.concat([df, newuser], ignore_index = True)    
-    return [key, df]
+    return key, df
 
 def addVenue(df, venueName):
     key = 1
@@ -42,15 +42,13 @@ def addVenue(df, venueName):
             key = len(df) + 1
             newVenue = pd.DataFrame([[key, venueName]], columns=['venueid', 'name'])
             df = pd.concat([df, newVenue], ignore_index = True)
-        
+        else:
+            row = df.loc[df['name'] == venuename]
+            key = int(row['venueid'])        
     else:
         newVenue = pd.DataFrame([[key, venueName]], columns=['venueid', 'name'])
-        # no data in df
-        if os.path.exists(path_to_file):
-            # load file
-            df = pd.read_csv(path_to_file)   
         df = pd.concat([df, newVenue], ignore_index = True) 
-    return [key, df]
+    return key, df
 
 mypath = "results/csv/"
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
@@ -61,21 +59,17 @@ ratingdf = pd.DataFrame()
 
 i = 1
 for venuename in onlyfiles:
-    _venue = addVenue(venuedf, venuename)
-    venueid = _venue[0]
-    venuedf = _venue[1]
+    venueid, venuedf = addVenue(venuedf, venuename)
 
     #load file
     filepath = mypath + venuename
-    place = pd.read_csv(filepath)
+    place = pd.read_csv(filepath, sep="|")
     # loop all place
     titlebar = f'loading venue {i}/{len(onlyfiles)}'
     with alive_bar(len(place), title=titlebar) as bar:        
         for index, row in place.iterrows():
             username = row['name'].strip()
-            _user = addUser(userdf, username)
-            userid = _user[0]
-            userdf = _user[1]            
+            userid, userdf = addUser(userdf, username)         
 
             score = float(row['score'])
             time = float(row['time'])
@@ -87,6 +81,6 @@ for venuename in onlyfiles:
             bar()
     i = i+1
 
-ratingdf.to_csv('data/rating.csv', sep='\t', encoding='utf-8')
-userdf.to_csv('data/user.csv', sep='\t', encoding='utf-8')
-venuedf.to_csv('data/venue.csv', sep='\t', encoding='utf-8')
+ratingdf.to_csv('data/rating.csv', sep='|', encoding='utf-8',index=False)
+userdf.to_csv('data/user.csv', sep='|', encoding='utf-8',index=False)
+venuedf.to_csv('data/venue.csv', sep='|', encoding='utf-8',index=False)

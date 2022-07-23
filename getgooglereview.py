@@ -145,7 +145,7 @@ def saveplacedetail(driver, lat, lon):
             place_data = existdata.append(place_data, ignore_index = True)        
     
     #save to csv
-    place_data.to_csv(path_to_file, index=False, encoding='utf-8')
+    place_data.to_csv(path_to_file, index=False, encoding='utf-8', sep='|')
     return [existrecord, place_name]
 
 with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
@@ -216,7 +216,7 @@ with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
                     os.makedirs(path, 0o666)
             except OSError:
                 print('Fatal: output directory "' + path + '" does not exist and cannot be created')
-            dataloaded.to_csv('results/csv/' + place_name + '.csv', index=False, encoding='utf-8')
+            dataloaded.to_csv('results/csv/' + place_name + '.csv', index=False, encoding='utf-8', sep='|')
         else:
             print('can\'t find review button')            
             continue
