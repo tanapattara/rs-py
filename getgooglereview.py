@@ -75,10 +75,17 @@ def loaddata(driver):
     list_score = []
     list_time = []
     list_comment = []
+    list_link = []
+    list_img = []
 
     with alive_bar(len(all_review_score)) as bar:
         for x in all_review_score:
             name = x['aria-label']
+            user = x.findChildren('a', {'class':'WEBjve'})
+            us = list(user)[0]
+            user_link = us['href']
+            user_img = us.img['src']
+
             profiles = x.findChildren('div', {'class':'DU9Pgb'})
             pf = list(profiles)[0]
             score = pf.findChildren('span', {'class':'kvMYJc'})[0]
@@ -92,12 +99,14 @@ def loaddata(driver):
             list_score.append(score)
             list_time.append(stime)
             list_comment.append(comment)
+            list_link.append(user_link)
+            list_img.append(user_img)
             bar()
             
 
-    df = pd.DataFrame([list_name, list_score, list_time, list_comment])
+    df = pd.DataFrame([list_name, list_score, list_time, list_comment, list_link, list_img])
     df = df.transpose()
-    df.columns = ['name', 'score', 'time', 'comment']
+    df.columns = ['name', 'score', 'time', 'comment', 'link', 'img']
     return df
 
 def saveplacedetail(driver, lat, lon):
@@ -222,4 +231,5 @@ with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
             continue
 
         driver.close()
+        break
 
