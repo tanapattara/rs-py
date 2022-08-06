@@ -128,7 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-results/xlsx/
 results/csv/
 results/place.csv
 data/rating.csv
