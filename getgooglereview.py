@@ -182,66 +182,67 @@ def saveplacedetail(driver, lat, lon, place_url):
 
     return [isExistRecord, place_name, place_data_df]
 
-with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=' ', quotechar=',')
+def loadPlacelist():
+    with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=' ', quotechar=',')
 
-    for row in spamreader:      
-        place_url = row[0]
+        for row in spamreader:      
+            place_url = row[0]
 
-        #find location
-        surl = place_url.split('/')
-        locations = [x for x in surl if "@" in x]
-        if len(locations) > 1:
-            i = 0
-            for loc in locations:
-                if len(loc.split(',')) == 3:
-                    break
-                i += 1
-            locations = locations[i]
-        else:
-            locations = locations[0]
+            #find location
+            surl = place_url.split('/')
+            locations = [x for x in surl if "@" in x]
+            if len(locations) > 1:
+                i = 0
+                for loc in locations:
+                    if len(loc.split(',')) == 3:
+                        break
+                    i += 1
+                locations = locations[i]
+            else:
+                locations = locations[0]
 
-        lat = float(locations.split(',')[0].replace('@',''))
-        lon = float(locations.split(',')[1])
+            lat = float(locations.split(',')[0].replace('@',''))
+            lon = float(locations.split(',')[1])
 
-        #open chrome
-        driver = webdriver.Chrome()
-        driver.get(place_url)
+            #open chrome
+            driver = webdriver.Chrome()
+            driver.get(place_url)
 
-        # wait for loadcontent
-        time.sleep(3.0)
-  
-        existrecord, place_name, place_data_df = saveplacedetail(driver, lat, lon, place_url)
-
-        if existrecord:
-            driver.close()
-            continue
-
-        #get review button
-        review_buttons = driver.find_elements(By.CLASS_NAME, 'HHrUdb')
-        if len(review_buttons) > 0:
-            last_element = review_buttons[-1]
-            ActionChains(driver).click(last_element).perform()
+            # wait for loadcontent
             time.sleep(3.0)
-            scrollandload(driver)
-            data_loaded = loaddata(driver)
+    
+            existrecord, place_name, place_data_df = saveplacedetail(driver, lat, lon, place_url)
 
-            parent_dir = "results"
+            if existrecord:
+                driver.close()
+                continue
 
-            dircsv = "csv"       
+            #get review button
+            review_buttons = driver.find_elements(By.CLASS_NAME, 'HHrUdb')
+            if len(review_buttons) > 0:
+                last_element = review_buttons[-1]
+                ActionChains(driver).click(last_element).perform()
+                time.sleep(3.0)
+                scrollandload(driver)
+                data_loaded = loaddata(driver)
 
-            #save to csv
-            path = os.path.join(parent_dir, dircsv)
-            try:
-                if not os.path.exists(path):
-                    os.makedirs(path, 0o666)
-            except OSError:
-                print('Fatal: output directory "' + path + '" does not exist and cannot be created')
-            data_loaded.to_csv('results/csv/' + place_name + '.csv', index=False, encoding='utf-8', sep='|')
+                parent_dir = "results"
 
-            place_data_df.to_csv('results/place.csv', index=False, encoding='utf-8', sep='|')    
-        else:
-            print('can\'t find review button')            
-            continue
+                dircsv = "csv"       
 
-        driver.close()
+                #save to csv
+                path = os.path.join(parent_dir, dircsv)
+                try:
+                    if not os.path.exists(path):
+                        os.makedirs(path, 0o666)
+                except OSError:
+                    print('Fatal: output directory "' + path + '" does not exist and cannot be created')
+                data_loaded.to_csv('results/csv/' + place_name + '.csv', index=False, encoding='utf-8', sep='|')
+
+                place_data_df.to_csv('results/place.csv', index=False, encoding='utf-8', sep='|')    
+            else:
+                print('can\'t find review button')            
+                continue
+
+            driver.close()
