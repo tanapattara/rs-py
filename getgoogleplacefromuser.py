@@ -7,6 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
+
 from alive_progress import alive_bar
 
 import bs4
@@ -42,8 +44,13 @@ def getTime(timetext):
     
     return 0.1
 
-def scrollandload(uid, driver):    
-    review_element = driver.find_element(By.CLASS_NAME, 'TiFmlb')
+def scrollandload(uid, driver): 
+
+    try:
+        review_element = driver.find_element(By.CLASS_NAME, 'TiFmlb')
+    except NoSuchElementException:
+        return False, ""
+
     allreview = int(review_element.text.split()[0].replace(',',''))
 
     loaded = 0
@@ -72,7 +79,7 @@ def scrollandload(uid, driver):
             count += 1
 
         # print(temp, loaded, count)
-        if count == 10:
+        if count == 20:
             break
     
     data = driver.page_source
@@ -106,7 +113,14 @@ def scrollandload(uid, driver):
 
     
     df = pd.DataFrame(list(zip(uids,title, location, score, times, comment)),columns=['userid','venue_name','vanue_location','score','time','comment'])
-    return df
+    return True,  df
+
+def isLoaded(name):
+    filepath = "results/user/" + name + ".csv"
+    if os.path.exists(filepath):
+        return True
+    return False;
+
 
 # load df from user
 userdf = pd.read_csv("data/user.csv", sep='|')
@@ -115,11 +129,17 @@ with alive_bar(len(userdf.index)) as bar:
         ulink = row['link']
         uid = row['userid']
         uname = row['name']
+
+        if isLoaded(uname):
+            continue
+
         #open user profile
         driver = webdriver.Chrome()
         driver.get(ulink)
 
-        df = scrollandload(uid, driver)
-        df.to_csv('results/user/' + uname + '.csv', index=False, encoding='utf-8', sep='|')
+        loaded, df = scrollandload(uid, driver)
+        if loaded:
+            df.to_csv('results/user/' + uname + '.csv', index=False, encoding='utf-8', sep='|')
+        
         bar()
         driver.close()
