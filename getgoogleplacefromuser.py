@@ -72,6 +72,8 @@ def scrollandload(uid, driver):
 
         loaded = int(len(reviewtitle))
         
+        time.sleep(3)
+
         if temp != loaded:
             temp = loaded
             count = 0
@@ -123,23 +125,45 @@ def isLoaded(name):
 
 
 # load df from user
-userdf = pd.read_csv("data/user.csv", sep='|')
-with alive_bar(len(userdf.index)) as bar:
+userdf = pd.read_csv("data/user.csv", sep='|', encoding='utf-8')
+emptyuser = pd.read_csv('data/emptyuser.csv', sep='|', encoding='utf-8')
+
+with alive_bar(len(userdf.index), title='Reading user', dual_line=True) as bar:
     for i, row in userdf.iterrows():
         ulink = row['link']
         uid = row['userid']
         uname = row['name']
 
+        if ":" in uname:
+            uname = uname.replace(':','').strip()
+
+        if uname in set(emptyuser['name']):
+            continue
         if isLoaded(uname):
             continue
 
         #open user profile
-        driver = webdriver.Chrome()
+        options = webdriver.ChromeOptions() 
+        options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        driver = webdriver.Chrome(options=options)
         driver.get(ulink)
 
         loaded, df = scrollandload(uid, driver)
         if loaded:
             df.to_csv('results/user/' + uname + '.csv', index=False, encoding='utf-8', sep='|')
+        else:
+            #new data
+            newdata = pd.DataFrame([uid, uname, ulink])
+            newdata = newdata.transpose()
+            newdata.columns = ['userid','name','link']
+
+            # empty user
+            path_to_file = 'data\emptyuser.csv'
+            if os.path.exists(path_to_file):
+                existdata = pd.read_csv(path_to_file, sep='|', encoding='utf-8')
+                newdata = pd.concat([existdata, newdata], ignore_index = True) 
+            
+            newdata.to_csv(path_to_file, index=False, encoding='utf-8', sep='|')
         
         bar()
         driver.close()
