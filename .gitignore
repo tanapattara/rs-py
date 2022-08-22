@@ -135,5 +135,6 @@ data/rating.csv
 data/user.csv
 data/venue.csv
 data/emptyuser.csv
-data/.tmp.driveupload/*
-data/.tmp.drivedownload/*
+data/.tmp.driveupload
+data/.tmp.drivedownload
+results/.tmp.driveupload

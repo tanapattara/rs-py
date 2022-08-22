@@ -7,7 +7,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import InvalidArgumentException
 
 from alive_progress import alive_bar
 
@@ -48,40 +51,47 @@ def scrollandload(uid, driver):
 
     try:
         review_element = driver.find_element(By.CLASS_NAME, 'TiFmlb')
+        allreview = int(review_element.text.split()[0].replace(',',''))
     except NoSuchElementException:
-        return False, ""
+        return False, False, ""
+    except ValueError:
+        allreview = int(review_element.text.split(' ')[1].replace(',',''))
 
-    allreview = int(review_element.text.split()[0].replace(',',''))
 
     loaded = 0
     count = 0
+    scoll = 2
     temp = 0
     while loaded < allreview:
 
-        iframe = driver.find_element(By.CLASS_NAME, "m6QErb")
-        scroll_origin = ScrollOrigin.from_element(iframe)
-        ActionChains(driver)\
-            .scroll_from_origin(scroll_origin, 0, 20000)\
-            .perform()
+        try:
+            iframe = driver.find_element(By.CLASS_NAME, "m6QErb")
+            scroll_origin = ScrollOrigin.from_element(iframe)
+            ActionChains(driver).scroll_from_origin(scroll_origin, 0, 20000 * scoll).perform()
+        except TimeoutException as ex:
+            print(ex.msg)
+            return False, True, ""
+        except InvalidArgumentException as ex:
+            print(ex.msg)
+            return False, True, ""
         
         data = driver.page_source
         soup = bs4.BeautifulSoup(data, "lxml")
         reviewtitle = soup.find_all('div',{'class':'d4r55 YJxk2d'})
-        #reviewlocation = soup.find_all('div',{'class':'RfnDt xJVozb'})
-        #reviewscore = soup.find_all('div',{'class':'kvMYJc'})
 
         loaded = int(len(reviewtitle))
         
-        time.sleep(3)
+        time.sleep(3)      
+        scoll += 2
 
         if temp != loaded:
-            temp = loaded
+            temp = loaded            
             count = 0
         elif temp == loaded:
             count += 1
 
         # print(temp, loaded, count)
-        if count == 20:
+        if count == 10:
             break
     
     data = driver.page_source
@@ -115,7 +125,7 @@ def scrollandload(uid, driver):
 
     
     df = pd.DataFrame(list(zip(uids,title, location, score, times, comment)),columns=['userid','venue_name','vanue_location','score','time','comment'])
-    return True,  df
+    return True, False, df
 
 def isLoaded(name):
     filepath = "results/user/" + name + ".csv"
@@ -127,15 +137,17 @@ def isLoaded(name):
 # load df from user
 userdf = pd.read_csv("data/user.csv", sep='|', encoding='utf-8')
 emptyuser = pd.read_csv('data/emptyuser.csv', sep='|', encoding='utf-8')
-
-with alive_bar(len(userdf.index), title='Reading user', dual_line=True) as bar:
+with alive_bar(len(userdf.index), title='Reading user:', dual_line=True) as bar:
     for i, row in userdf.iterrows():
+
         ulink = row['link']
         uid = row['userid']
         uname = row['name']
-
+        bar()
         if ":" in uname:
             uname = uname.replace(':','').strip()
+        if '/' in uname:
+            uname = uname.replace('/',' ').strip()
 
         if uname in set(emptyuser['name']):
             continue
@@ -143,19 +155,25 @@ with alive_bar(len(userdf.index), title='Reading user', dual_line=True) as bar:
             continue
 
         #open user profile
-        options = webdriver.ChromeOptions() 
-        options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        driver = webdriver.Chrome(options=options)
+        chrome_options = Options()
+        chrome_options.add_argument("--dns-prefetch-disable")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(ulink)
 
-        loaded, df = scrollandload(uid, driver)
+        loaded, iserror, df = scrollandload(uid, driver)
         if loaded:
             df.to_csv('results/user/' + uname + '.csv', index=False, encoding='utf-8', sep='|')
         else:
             #new data
-            newdata = pd.DataFrame([uid, uname, ulink])
+            msg = "nocomment"
+            if iserror:
+                msg = "error"
+
+            newdata = pd.DataFrame([uid, uname, ulink,msg])
             newdata = newdata.transpose()
-            newdata.columns = ['userid','name','link']
+            newdata.columns = ['userid','name','link', 'msg']
 
             # empty user
             path_to_file = 'data\emptyuser.csv'
@@ -164,6 +182,5 @@ with alive_bar(len(userdf.index), title='Reading user', dual_line=True) as bar:
                 newdata = pd.concat([existdata, newdata], ignore_index = True) 
             
             newdata.to_csv(path_to_file, index=False, encoding='utf-8', sep='|')
-        
-        bar()
+
         driver.close()
