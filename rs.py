@@ -21,7 +21,6 @@ traindf = pd.concat([ratingsdf,testdf]).drop_duplicates(keep=False)
 
 rsw = RSWeightedRating()
 weighted_venue = rsw.getDataframe(ratingsdf=ratingsdf, venuedf=venuedf)
-print(weighted_venue.head(20))
 
 # ratingdf -> venueid|userid|score|time|comment
 # userdf -> userid|name|link|review

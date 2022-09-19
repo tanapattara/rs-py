@@ -142,3 +142,4 @@ data/.tmp.driveupload
 data/.tmp.drivedownload
 results/.tmp.driveupload
 data/venue_metadata.csv
+data/rating_pop.csv
