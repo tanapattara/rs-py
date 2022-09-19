@@ -1,3 +1,8 @@
+"""
+For load all users in user.csv
+
+return user.csv contribute file in results/user
+"""
 from json import load
 from tkinter import X
 from warnings import catch_warnings

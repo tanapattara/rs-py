@@ -134,6 +134,9 @@ results/place.csv
 data/rating.csv
 data/user.csv
 data/venue.csv
+data/_rating.csv
+data/_user.csv
+data/_venue.csv
 data/emptyuser.csv
 data/.tmp.driveupload
 data/.tmp.drivedownload

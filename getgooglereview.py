@@ -1,3 +1,8 @@
+"""
+For load placelist.csv
+
+return result of place.csv in results/csv folder
+"""
 from tkinter import X
 from warnings import catch_warnings
 from numpy import double

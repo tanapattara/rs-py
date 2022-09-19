@@ -1,3 +1,8 @@
+"""
+Read all place.csv in results/csv
+
+return user.csv, venue.csv and rating.csv in data/
+"""
 from tokenize import Number
 import numpy as np
 import pandas as pd
