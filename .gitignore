@@ -140,6 +140,8 @@ data/_venue.csv
 data/emptyuser.csv
 data/.tmp.driveupload
 data/.tmp.drivedownload
+data/categorydf.csv
+data/badcategorydf.csv
 results/.tmp.driveupload
 data/venue_metadata.csv
 data/rating_pop.csv
