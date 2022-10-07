@@ -35,7 +35,7 @@ ratingsdf = pd.read_csv("data/rating_pop.csv", sep='|')
 
 def simuv(uid, vid, rdf, simdf):
 
-    if len(simdf) > 0 and uid in simdf['u'] and vid in simdf['v']:
+    if len(simdf) > 0 and ((uid in simdf['u'] and vid in simdf['v']) or (vid in simdf['u'] and uid in simdf['v'])):
         return simdf
 
     udf = rdf.loc[rdf['userid'] == uid]
