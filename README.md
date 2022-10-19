@@ -9,7 +9,7 @@
 ที่ Terminal เรียกใช้คำสั่ง pip install ตามด้วย package เพื่อทำการติดตั้ง
 
 ```
-pip install selenium pandas lxml openpyxl bs4 numpy scikit-surprise
+pip install selenium pandas lxml openpyxl bs4 numpy 
 ```
 
 ### การทำงาน
