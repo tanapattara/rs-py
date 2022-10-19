@@ -33,7 +33,7 @@ udf = pd.read_csv("data/user.csv", sep='|')
 # ratingdf -> venueid|userid|score|time|comment
 ratingsdf = pd.read_csv("data/rating_pop.csv", sep='|')
 
-def simuv(uid, vid, rdf, simdf):
+def simuv(uid:int, vid:int, rdf, simdf):
 
     if len(simdf) > 0 and ((uid in simdf['u'] and vid in simdf['v']) or (vid in simdf['u'] and uid in simdf['v'])):
         return simdf
@@ -65,25 +65,43 @@ def simuv(uid, vid, rdf, simdf):
 
     return simdf
 
+# train-test data
+testdf = pd.DataFrame()
+traindf = pd.DataFrame()
+filepath = 'data/testdf.csv'
+if os.path.exists(filepath):
+    testdf = pd.read_csv("data/testdf.csv", sep='|')
+    traindf = pd.read_csv("data/traindf.csv", sep='|')
+else:
+    testdf = ratingsdf.sample(frac=0.1, replace=True, random_state=1)
+    traindf = pd.concat([ratingsdf,testdf]).drop_duplicates(keep=False)    
+
+testdf.to_csv('data/testdf.csv', sep='|', encoding='utf-8',index=False)
+traindf.to_csv('data/traindf.csv', sep='|', encoding='utf-8',index=False)
 
 simdf = pd.DataFrame()
-for index, row in ratingsdf.iterrows():
-    uid = row['userid']
+filepath = 'data/simdf.csv'
+if os.path.exists(filepath):
+    simdf = pd.read_csv("data/simdf.csv", sep='|')
+i = 1
+for index, row in testdf.iterrows():
+    uid = int(row['userid'])
     # get userdf
-    udf = ratingsdf.loc[ratingsdf['userid'] == uid]
+    udf = traindf.loc[traindf['userid'] == uid]
     # loop all userdf
+    ui = 1
     for useridex, urow in udf.iterrows():
         venueid = urow['venueid']
         # venue df that show all usercheckin
-        venuedf = ratingsdf.loc[ratingsdf['venueid'] == venueid]
-        titlebar = f'loading {index}/{len(ratingsdf)} at user {useridex}/{len(udf)}'
+        venuedf = traindf.loc[traindf['venueid'] == venueid]
+        titlebar = f'loading {i}/{len(testdf)} at user {ui}/{len(udf)}'
         with alive_bar(len(venuedf), title=titlebar) as bar:  
             for vindex, vrow in venuedf.iterrows():
-                vid = vrow['userid']
+                vid = int(vrow['userid'])
                 if uid == vid:
                     continue
-                simdf = simuv(uid, vid, rdf=ratingsdf, simdf=simdf)
+                simdf = simuv(uid, vid, rdf=testdf, simdf=simdf)
                 bar()
-            
-
-simdf.to_csv('data/simdf.csv', sep='|', encoding='utf-8',index=False)
+            simdf.to_csv('data/simdf.csv', sep='|', encoding='utf-8',index=False)
+        ui+=1
+    i+=1
