@@ -86,6 +86,35 @@ def add2predict(u,v,score, pscore,df):
 
     return df
 
+def pred_cf(uid, vid, uvscore, simdf, predictdf):
+    # check top similarity
+    bestsimdf = simdf.loc[simdf['u'] == uid]
+    bestsimdf = bestsimdf.sort_values(by=['s'], ascending=False)
+    bestsimdf = bestsimdf.loc[bestsimdf['s'] > 0.5]
+    
+    zsim = 0
+    zscore = 0
+    pred_score_u_2_target = -1
+    if len(bestsimdf) > 0:
+        for simindex, simrow in bestsimdf.iterrows():
+            v_id = int(simrow['v'])
+            if v_id == uid:
+                continue
+
+            bestsim = int(simrow['s'])
+            train_v_df = traindf.loc[(traindf['userid'] == v_id) & (traindf['venueid'] == target_venue_id)]
+
+            if len(train_v_df) == 0:
+                continue
+
+            zsim += bestsim
+            zscore += bestsim * int(train_v_df['score'])
+        if zsim != 0:
+            pred_score_u_2_target = zscore / zsim
+    
+    predictdf = add2predict(uid, vid, uvscore, pred_score_u_2_target, predictdf)
+    return predictdf
+
 # train-test data
 testdf = pd.DataFrame()
 traindf = pd.DataFrame()
@@ -130,31 +159,6 @@ for index, row in testdf.iterrows():
             user_v_checkin_df = traindf.loc[traindf['userid'] == user_v_id]
             simdf = simuv(target_useru_id, user_v_id, rdf=testdf, simdf=simdf)
             simdf.to_csv('data/simdf.csv', sep='|', encoding='utf-8',index=False)
-    
-    # check top similarity
-    bestsimdf = simdf.loc[simdf['u'] == target_useru_id]
-    bestsimdf = bestsimdf.sort_values(by=['s'], ascending=False)
-    bestsimdf = bestsimdf.loc[bestsimdf['s'] > 0.5]
-    
-    zsim = 0
-    zscore = 0
-    pred_score_u_2_target = -1
-    if len(bestsimdf) > 0:
-        for simindex, simrow in bestsimdf.iterrows():
-            vid = int(simrow['v'])
-            if vid == target_useru_id:
-                continue
-
-            bestsim = int(simrow['s'])
-            train_v_df = traindf.loc[(traindf['userid'] == vid) & (traindf['venueid'] == target_venue_id)]
-
-            if len(train_v_df) == 0:
-                continue
-
-            zsim += bestsim
-            zscore += bestsim * int(train_v_df['score'])
-        if zsim != 0:
-            pred_score_u_2_target = zscore / zsim
-    
-    predictdf = add2predict(target_useru_id,target_venue_id, target_score, pred_score_u_2_target, predictdf)
+    predictdf = pred_cf(target_useru_id, target_venue_id, target_score, simdf, predictdf)
     testi += 1
+
