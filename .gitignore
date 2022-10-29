@@ -147,3 +147,5 @@ data/venue_metadata.csv
 data/rating_pop.csv
 data/badcategorydf.csv
 data/categorydf.csv
+data/predictdf.csv
+data/simdf.csv

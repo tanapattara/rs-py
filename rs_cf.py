@@ -141,8 +141,8 @@ def pred_cf(uid, vid, uvscore, simdf, predictdf):
     # check top similarity
     sim_df = simdf.loc[simdf['u'] == uid]
     # bestsimdf = bestsimdf.sort_values(by=['s'], ascending=False)
-    best_sim_m_df = sim_df.loc[sim_df['sm'] > 0.7]
-    best_sim_df = sim_df.loc[sim_df['s'] > 0.7]
+    best_sim_m_df = sim_df.loc[sim_df['sm'] > 0.0]
+    best_sim_df = sim_df.loc[sim_df['s'] > 0]
 
     zsim = 0
     zscore = 0
@@ -226,7 +226,7 @@ else:
 testdf.to_csv('data/testdf.csv', sep='|', encoding='utf-8', index=False)
 traindf.to_csv('data/traindf.csv', sep='|', encoding='utf-8', index=False)
 
-isLoad = False
+isLoad = True
 simdf = getfile('data/simdf.csv', isLoad)
 predictdf = getfile('data/predictdf.csv', isLoad)
 
