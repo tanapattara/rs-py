@@ -2,9 +2,6 @@
 from cgi import test
 from curses.ascii import islower
 import math
-from pickle import TRUE
-import re
-from tkinter.tix import COLUMN
 from tokenize import Double
 from unittest import result
 from scipy.sparse import csr_matrix
@@ -15,14 +12,12 @@ from alive_progress import alive_bar
 import os.path
 import os
 from scipy import spatial
-from surprise import Dataset
-from surprise import Reader
-from surprise import KNNWithMeans
-
+from surprise import Dataset, Reader, KNNWithMeans
+from util import *
 # load dataframe
 # ratingdf -> venueid|userid|score|time|comment
 # ratingsdf = pd.read_csv("data/rating.csv", sep='|')
-udf = pd.read_csv("data/user.csv", sep='|')
+udf = pd.read_csv("data/_user.csv", sep='|')
 # venuedf -> venueid|name|location|vote_count|vote_average|score
 # venuedf = pd.read_csv("data/venue.csv", sep='|')
 # venuedf_meta -> venueid|name|location|vote_count|vote_average|score
@@ -35,7 +30,8 @@ udf = pd.read_csv("data/user.csv", sep='|')
 # df.to_csv('data/rating_pop.csv', sep='|', encoding='utf-8',index=False)
 
 # ratingdf -> venueid|userid|score|time|comment
-ratingsdf = pd.read_csv("data/rating_pop.csv", sep='|')
+# ratingsdf = pd.read_csv("data/rating_pop.csv", sep='|')
+ratingsdf = pd.read_csv("data/rs_rating.csv", sep='|')
 
 
 def simuv(uid: int, vid: int, rdf, simdf):
@@ -111,21 +107,6 @@ def simuv(uid: int, vid: int, rdf, simdf):
     return simdf
 
 
-def getfile(filepath, isLoad=True):
-
-    df = pd.DataFrame()
-
-    if not isLoad:
-        return df
-
-    try:
-        if os.path.exists(filepath):
-            df = pd.read_csv(filepath, sep='|')
-    except:
-        return df
-    return df
-
-
 def add2predict(u, v, score, pscore, pmscore, df, popScore):
     if len(df) > 0:
         df.loc[len(df.index)] = [u, v, score, pscore, pmscore, popScore]
@@ -142,19 +123,19 @@ def pred_cf(uid, vid, uvscore, simdf, predictdf):
     sim_df = simdf.loc[simdf['u'] == uid]
     # bestsimdf = bestsimdf.sort_values(by=['s'], ascending=False)
     best_sim_m_df = sim_df.loc[sim_df['sm'] > 0.0]
-    best_sim_df = sim_df.loc[sim_df['s'] > 0]
+    best_sim_df = sim_df.loc[sim_df['s'] > 0.5]
 
     zsim = 0
     zscore = 0
 
-    pred_score_u_2_mean_target = -1
+    pred_score_u_2_mean_target = 0
     if len(best_sim_m_df) > 0:
         for simindex, simrow in best_sim_m_df.iterrows():
             v_id = int(simrow['v'])
             if v_id == uid:
                 continue
 
-            bestsim = int(simrow['sm'])
+            bestsim = float(simrow['sm'])
             train_v_df = traindf.loc[(traindf['userid'] == v_id) & (
                 traindf['venueid'] == target_venue_id)]
 
@@ -163,7 +144,7 @@ def pred_cf(uid, vid, uvscore, simdf, predictdf):
 
             vscore = 1
             if len(train_v_df) == 1:
-                vscore = int(train_v_df['score'])
+                vscore = float(train_v_df['score'])
             else:
                 vscore = train_v_df.score.sum() / len(train_v_df)
 
@@ -172,14 +153,14 @@ def pred_cf(uid, vid, uvscore, simdf, predictdf):
         if zsim != 0:
             pred_score_u_2_mean_target = zscore / zsim
 
-    pred_score_u_2_target = -1
+    pred_score_u_2_target = 0
     if len(best_sim_df) > 0:
         for simindex, simrow in best_sim_df.iterrows():
             v_id = int(simrow['v'])
             if v_id == uid:
                 continue
 
-            bestsim = int(simrow['s'])
+            bestsim = float(simrow['s'])
             train_v_df = traindf.loc[(traindf['userid'] == v_id) & (
                 traindf['venueid'] == target_venue_id)]
 
@@ -188,7 +169,7 @@ def pred_cf(uid, vid, uvscore, simdf, predictdf):
 
             vscore = 1
             if len(train_v_df) == 1:
-                vscore = int(train_v_df['score'])
+                vscore = float(train_v_df['score'])
             else:
                 vscore = train_v_df.score.sum() / len(train_v_df)
 
@@ -210,6 +191,40 @@ def pred_cf(uid, vid, uvscore, simdf, predictdf):
     return predictdf
 
 
+def validate(pdf):
+    # u|v|real_score|predic_cosin_cf|predic_pearson_cf|popular
+    rmse_sumc = 0
+    rmse_sump = 0
+    rmse_sumpop = 0
+    mae_sumc = 0
+    mae_sump = 0
+    mae_sumpop = 0
+    for index, row in pdf.iterrows():
+        r = row.real_score
+        p_c = row.predic_cosin_cf
+        p_p = row.predic_pearson_cf
+        p_pop = row.popular
+
+        # rmse
+        rmse_sumc = rmse_sumc + pow((p_c - r), 2)
+        rmse_sump = rmse_sump + pow(p_p - r, 2)
+        rmse_sumpop = rmse_sumpop + pow(p_pop - r, 2)
+        # mae
+        mae_sumc = mae_sumc + abs(p_c - r)
+        mae_sump = mae_sump + abs(p_p - r)
+        mae_sumpop = mae_sumpop + abs(p_pop - r)
+
+    rmse_sumc = math.sqrt(rmse_sumc / len(pdf))
+    rmse_sump = math.sqrt(rmse_sump / len(pdf))
+    rmse_sumpop = math.sqrt(rmse_sumpop / len(pdf))
+    mae_sumc = math.sqrt(mae_sumc / len(pdf))
+    mae_sump = math.sqrt(mae_sump / len(pdf))
+    mae_sumpop = math.sqrt(mae_sumpop / len(pdf))
+    df = pd.DataFrame([[rmse_sumc, rmse_sump, rmse_sumpop, mae_sumc, mae_sump, mae_sumpop]], columns=[
+        'rmse_cf_cosin', 'rmse_cf_pearson', 'rmse_pop', 'mae_cf_cosin', 'mae_cf_pearson', 'mae_pop'])
+    df.to_csv('data/validate.csv', sep='|')
+
+
 # train-test data
 testdf = pd.DataFrame()
 traindf = pd.DataFrame()
@@ -226,7 +241,7 @@ else:
 testdf.to_csv('data/testdf.csv', sep='|', encoding='utf-8', index=False)
 traindf.to_csv('data/traindf.csv', sep='|', encoding='utf-8', index=False)
 
-isLoad = True
+isLoad = False
 simdf = getfile('data/simdf.csv', isLoad)
 predictdf = getfile('data/predictdf.csv', isLoad)
 
@@ -255,8 +270,9 @@ for index, row in testdf.iterrows():
 
             # venue df that show all usercheckin
             user_v_checkin_df = traindf.loc[traindf['userid'] == user_v_id]
-            simdf = simuv(target_useru_id, user_v_id, rdf=testdf, simdf=simdf)
+            simdf = simuv(target_useru_id, user_v_id, rdf=traindf, simdf=simdf)
             simdf.to_csv('data/simdf.csv', sep='|',
                          encoding='utf-8', index=False)
     predictdf = pred_cf(target_useru_id, target_venue_id,
                         target_score, simdf, predictdf)
+validate(predictdf)
