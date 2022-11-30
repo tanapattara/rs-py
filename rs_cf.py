@@ -13,7 +13,8 @@ import os.path
 import os
 from scipy import spatial
 from surprise import Dataset, Reader, KNNWithMeans
-from util import *
+from util import Util, getfile
+
 # load dataframe
 # ratingdf -> venueid|userid|score|time|comment
 # ratingsdf = pd.read_csv("data/rating.csv", sep='|')
@@ -242,8 +243,8 @@ testdf.to_csv('data/testdf.csv', sep='|', encoding='utf-8', index=False)
 traindf.to_csv('data/traindf.csv', sep='|', encoding='utf-8', index=False)
 
 isLoad = False
-simdf = getfile('data/simdf.csv', isLoad)
-predictdf = getfile('data/predictdf.csv', isLoad)
+simdf = Util.getfile('data/simdf.csv', isLoad)
+predictdf = Util.getfile('data/predictdf.csv', isLoad)
 
 testi = 0
 for index, row in testdf.iterrows():

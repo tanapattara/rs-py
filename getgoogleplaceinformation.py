@@ -32,9 +32,9 @@ venuedf = pd.read_csv("data/venue_metadata.csv", sep='|', encoding='utf-8')
 categorydf = pd.DataFrame()
 badcategorydf = pd.DataFrame()
 
-path_to_file = 'data/categorydf.csv'
+path_to_file = 'data/gcategorydf.csv'
 if os.path.exists(path_to_file):
-    categorydf = pd.read_csv("data/categorydf.csv", sep='|', encoding='utf-8')
+    categorydf = pd.read_csv("data/gcategorydf.csv", sep='|', encoding='utf-8')
 path_to_file = 'data/badcategorydf.csv'
 if os.path.exists(path_to_file):
     badcategorydf = pd.read_csv("data/badcategorydf.csv", sep='|', encoding='utf-8')
@@ -86,5 +86,5 @@ with alive_bar(len(venuedf)) as bar:
             categorydf = pd.DataFrame([[venue_id, venue_name, strCategory]], columns=['venueid','name', 'category'])        
         
 
-categorydf.to_csv('data/categorydf.csv', sep='|', encoding='utf-8',index=False)
+categorydf.to_csv('data/gcategorydf.csv', sep='|', encoding='utf-8',index=False)
 badcategorydf.to_csv('data/badcategorydf.csv', sep='|', encoding='utf-8',index=False)
