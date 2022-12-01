@@ -29,6 +29,7 @@ def getMcate(catetxt):
     data = g2m_category.loc[g2m_category.gcate == catetxt]
     return data.mcate.values.item()
 
+n = len(venuedf)
 # loop all venue.csv
 for i, row in venuedf.iterrows():
     vid = row.venueid
@@ -55,7 +56,8 @@ for i, row in venuedf.iterrows():
         else:
             # undefind link category
             while True:
-                print("Undefind Category from google : " + gcat)
+                print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                print("Undefind Category from google {}/{} : ".format(i,n) + str(vname) + " | " + str(gcat))
                 print("Add gCategory to MainCategory")
                 print("1|สถานที่เกี่ยวกับศาสนา\n2|แลนด์มาร์กและอนุสรณ์สถาน\n3|ศิลปะวัฒนธรรมชุมชน\n4|ตลาดแหล่งชุมชน\n5|พิพิธภัณฑ์\n6|ธรรมชาติและสถานที่สวยงาม\n7|other\n")
                 value = input("Please enter a number:")
@@ -92,8 +94,27 @@ for i, row in venuedf.iterrows():
                     break
     else:
         # undefind category from google
-        while True:
-                print("Undefind Category from google : " + vname)
+        gcat = "other"
+        if "วัด" in vname:
+            mcat = "สถานที่เกี่ยวกับศาสนา"
+
+            if len(venuecatedf) > 0:
+                venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
+            else:   
+                venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
+        elif "Cafe" in vname or "cafe" in vname:
+            mcat = "ตลาดแหล่งชุมชน"
+        elif "โรงแรม" in vname:
+            mcat = "other"
+
+            if len(venuecatedf) > 0:
+                venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
+            else:   
+                venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
+        else:
+            while True:
+                print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                print("Undefind Category from google {}/{} : ".format(i,n) + vname + " | UNKNOWN")
                 print("Add gCategory to MainCategory")
                 print("1|สถานที่เกี่ยวกับศาสนา\n2|แลนด์มาร์กและอนุสรณ์สถาน\n3|ศิลปะวัฒนธรรมชุมชน\n4|ตลาดแหล่งชุมชน\n5|พิพิธภัณฑ์\n6|ธรรมชาติและสถานที่สวยงาม\n7|other\n")
                 value = input("Please enter a number:")
@@ -113,8 +134,6 @@ for i, row in venuedf.iterrows():
                         mcat = "พิพิธภัณฑ์"
                     elif value == 6:
                         mcat = "ธรรมชาติและสถานที่สวยงาม"
-
-                    gcat = "other"
 
                     if len(venuecatedf) > 0:
                         venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
