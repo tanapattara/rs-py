@@ -29,6 +29,13 @@ def getMcate(catetxt):
     data = g2m_category.loc[g2m_category.gcate == catetxt]
     return data.mcate.values.item()
 
+def add2df(vid, vname, gcat, mcat):
+    if len(venuecatedf) > 0:
+        venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
+    else:
+        venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
+    return venuecatedf
+
 n = len(venuedf)
 # loop all venue.csv
 for i, row in venuedf.iterrows():
@@ -84,33 +91,22 @@ for i, row in venuedf.iterrows():
                     else:
                         g2m_category = pd.DataFrame([[gcat, mcat]], columns=['gcate','mcate'])
 
-                    if len(venuecatedf) > 0:
-                        venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
-                    else:
-                        venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
-
+                    venuecatedf = add2df(vid, vname, gcat, mcat)
                     
                     # Stop loop
                     break
     else:
         # undefind category from google
         gcat = "other"
+        mcat = "other"
         if "วัด" in vname:
             mcat = "สถานที่เกี่ยวกับศาสนา"
-
-            if len(venuecatedf) > 0:
-                venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
-            else:   
-                venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
         elif "Cafe" in vname or "cafe" in vname:
             mcat = "ตลาดแหล่งชุมชน"
-        elif "โรงแรม" in vname:
+        elif "อุทยาน" in vname:
+             mcat = "ธรรมชาติและสถานที่สวยงาม"
+        elif "โรงแรม" in vname or "Resort" in vname or "รีสอร์ท" in vname:
             mcat = "other"
-
-            if len(venuecatedf) > 0:
-                venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
-            else:   
-                venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
         else:
             while True:
                 print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -134,14 +130,9 @@ for i, row in venuedf.iterrows():
                         mcat = "พิพิธภัณฑ์"
                     elif value == 6:
                         mcat = "ธรรมชาติและสถานที่สวยงาม"
-
-                    if len(venuecatedf) > 0:
-                        venuecatedf.loc[len(venuecatedf.index)] = [vid, vname, gcat, mcat]
-                    else:
-                        venuecatedf = pd.DataFrame([[vid, vname, gcat, mcat]], columns=['venueid', 'name', 'gcate', 'mcate'])
                     
                     # Stop loop
                     break
-    
+        venuecatedf = add2df(vid, vname, gcat, mcat)
     venuecatedf.to_csv('data/venue_with_category.csv', sep='|', encoding='utf-8', index=False)
     g2m_category.to_csv('data/g2m_category.csv', sep='|', encoding='utf-8', index=False)
