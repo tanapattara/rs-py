@@ -279,6 +279,8 @@ def loadfromfile():
 
 def main():
     db = Rsdb()
+    db.drop_all_table()
+
     db.close_connection()
 
 
