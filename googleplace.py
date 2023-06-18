@@ -1,6 +1,5 @@
 """
 For load placelist.csv
-
 return result of place.csv in results/csv folder
 """
 from tkinter import X
@@ -11,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from alive_progress import alive_bar
+from rsdb import Rsdb
 
 import bs4
 import pandas as pd
@@ -179,7 +179,6 @@ def saveplacedetail(driver, lat, lon, place_url):
     place_data_df = place_data_df.transpose()
     place_data_df.columns = ['name', 'score',
                              'category', 'latitude', 'longitude', 'link']
-    path_to_file = 'results\place.csv'
 
     parent_dir = ""
     dirxlsx = "results"
@@ -192,6 +191,7 @@ def saveplacedetail(driver, lat, lon, place_url):
               '" does not exist and cannot be created')
 
     # check exist data in place.csv file
+    path_to_file = 'results\place.csv'
     isExistRecord = False
     if os.path.exists(path_to_file):
         existdata = pd.read_csv(path_to_file, sep='|')
@@ -207,7 +207,7 @@ def saveplacedetail(driver, lat, lon, place_url):
     return [isExistRecord, place_name, place_data_df]
 
 
-def main():
+def loadfromfile():
     with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=' ', quotechar=',')
 
@@ -275,6 +275,11 @@ def main():
                 continue
 
             driver.close()
+
+
+def main():
+    db = Rsdb()
+    db.close_connection()
 
 
 if __name__ == "__main__":

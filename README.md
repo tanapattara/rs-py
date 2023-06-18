@@ -9,6 +9,7 @@
 ที่ Terminal เรียกใช้คำสั่ง pip install ตามด้วย package เพื่อทำการติดตั้ง
 
 ```
+pip freeze >> requirements.txt
 pip install -r requirements.txt
 ```
 
@@ -52,22 +53,32 @@ erDiagram
     REVIEW }|--|| VANUE : review
     REVIEW {
         int id
-        int userid
-        int venueid
+        int user_id
+        int venue_id
         int score
         double time
         string comment
         string link
         string review
     }
+    VANUE ||--|| VANUE_CATEGORY : category
      VANUE {
         int id
         string name
         int score
-        string category
         double latitude
         double longitude
         string link
+    }
+    VANUE_CATEGORY ||--|| CATEGORY : category
+    VANUE_CATEGORY{
+      int id
+      int vanue_id
+      int category_id
+    }
+    CATEGORY{
+      int id
+      string name
     }
 
 ```
