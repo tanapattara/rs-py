@@ -1,18 +1,32 @@
 # Recommendation System
 
-## การดึงข้อมูลรีวิวจาก Google Maps
+โปรเจคแนะนำอะไรสักอย่าง ด้วยเทคนิค Recommendation System ตอนนี้ก็พยายามดึงข้อมูลสถานที่มาจาก Google Map ด้วยเทคนิค Web Scraping และจะเก็บลงฐานข้อมูลเพื่อนำมาประมวลผลต่อไป
 
-สำหรับการดึงข้อมูลรีวิวสถานที่ที่มีใน Google Maps โดยใช้ chromedriver โดยเครืองต้องมีการติดตั้ง [Chrome Browser](https://www.google.com/intl/th_th/chrome/)
+# Setup
 
-### ติดตั้งแพ็กเก็จสำหรับ Python
+## ติดตั้งแพ็กเก็จสำหรับ Python
 
 ที่ Terminal เรียกใช้คำสั่ง pip install ตามด้วย package เพื่อทำการติดตั้ง
 
 ```
-pip install selenium pandas lxml openpyxl bs4 numpy alive_progress
+pip install -r requirements.txt
 ```
 
-### การทำงาน
+## ติดตั้ง Chrome Driver
+
+สำหรับการดึงข้อมูลรีวิวสถานที่ที่มีใน Google Maps โดยใช้ chromedriver โดยเครืองต้องมีการติดตั้ง [Chrome Browser](https://www.google.com/intl/th_th/chrome/)
+
+## ติดตั้งฐานข้อมูลโดยใช้ Docker
+
+ทำการดาวโหลดและติดตั้ง Docker จาก[เว็บไซด์](https://www.docker.com/) หลังจากนั้นเข้าไปที่โฟลเดอร์ `rs-db` และเรียกใช้คำสั่งสำหรับสร้าง Docker
+
+```
+docker-compose up
+```
+
+โปรแกรมจะทำการสร้าง Docker container และ Docker image ขึ้นมาสำหรับฐานข้อมูล MySQL
+
+# การทำงาน
 
 1. ใส่ url ของสถานที่ที่ได้จาก Google map `data/placelist.csv` โดยสถานที่แต่ละที่ ต่อหนึ่งบรรทัด
 2. สั่งทำงานไฟล์ `googleplace.py`
@@ -23,27 +37,40 @@ pip install selenium pandas lxml openpyxl bs4 numpy alive_progress
    1. ข้อมูลสถานที่จะถูกเก็บไว้ที่ `results/place.csv`
    2. ข้อมูลรีวิวจะถูกเก็บไว้ที่ `results/csv/PLACE_NAME.csv`
 
-## Dataframe diagram
+# Entity Relationship Diagrams
 
 โครงสร้างข้อมูล Dataframe โดยนำมาจากข้อมูลที่ได้จาก Google map ในการคำนวน
 
-### user
+```mermaid
+erDiagram
+   USER ||--|{ REVIEW : review
+   USER {
+        int id
+        string name
+        string link
+    }
+    REVIEW }|--|| VANUE : review
+    REVIEW {
+        int id
+        int userid
+        int venueid
+        int score
+        double time
+        string comment
+        string link
+        string review
+    }
+     VANUE {
+        int id
+        string name
+        int score
+        string category
+        double latitude
+        double longitude
+        string link
+    }
 
-| userid | name            |
-| ------ | --------------- |
-| 1      | Google username |
-
-### venue
-
-| venueid | name                | score | category                | latitude | longitude |
-| ------- | ------------------- | ----- | ----------------------- | -------- | --------- |
-| 1       | Google place's name | 5.0   | Google place's category | 0.00     | 0.00      |
-
-### review
-
-| reviewid | userid | score | time | comment      |
-| -------- | ------ | ----- | ---- | ------------ |
-| 1        | 1      | 5     | 0.1  | comment text |
+```
 
 _หน่วยของ time เป็นปี หากน้อยกว่า 1 ปี จะใช้จุดทศนิยม เช่น 1 เดือนใช้ 0.1 เป็นต้น แต่หากมีระยะเวลานานกว่า 10 เดือนขึ้นไปนับเป็น 1 ปี_
 

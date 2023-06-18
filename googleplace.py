@@ -87,7 +87,7 @@ def loaddata(driver):
             if more_review_btn_element:
                 ActionChains(driver).click(more_review_btn_element).perform()
         except Exception as e:
-            print("no button to click")
+            print("no button to click", end='\r')
 
     data = driver.page_source
     soup = bs4.BeautifulSoup(data, "lxml")
