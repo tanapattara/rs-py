@@ -18,6 +18,7 @@ import time
 import csv
 import os.path
 import os
+import sys
 
 
 def scrollandload(driver):
@@ -61,21 +62,21 @@ def convertTime(ttext):
             tsplited = 1
 
         if tsplited > 9:
-            return double(1)
+            return float(1)
         else:
             tsplited = tsplited / 10
-            return double(tsplited)
+            return float(tsplited)
     elif "ปี" in ttext:
         tsplited = ttext.split()
         if len(tsplited) > 1:
-            return double(tsplited[0])
+            return float(tsplited[0])
         else:
-            return 1.0
+            return float(1.0)
     else:
-        return 0.1
+        return float(0.1)
 
 
-def loaddata(driver):
+def loaddata(driver, venue_id, db):
 
     # get more review button
     more_review_btn_elements = driver.find_elements(
@@ -137,6 +138,11 @@ def loaddata(driver):
             if comment_element:
                 comment = comment_element.text
 
+            # save to db
+            user_id = db.insert_user(name, user_link, user_review_n)
+            review_id = db.insert_review(
+                user_id, venue_id, score, stime, comment)
+
             list_name.append(name)
             list_score.append(score)
             list_time.append(stime)
@@ -152,26 +158,25 @@ def loaddata(driver):
     return df
 
 
-def saveplacedetail(driver, lat, lon, place_url):
+def saveplacedetail(driver, lat, lon, place_url, db):
+    global isSaveCsv
     # get name of place
     data = driver.page_source
     soup = bs4.BeautifulSoup(data, "lxml")
     name_element = soup.find_all('h1', {'class': 'DUwDvf fontHeadlineLarge'})
     place_name = name_element[0].text.strip()
     # get overall score of place
-    p_score = soup.find_all('div', {'class', 'F7nice mmu3tf'})
-
-    place_score = 0
-    try:
-        if (p_score[0].span.text.strip() != ''):
-            place_score = float(p_score[0].span.text)
-    except:
+    p_score = soup.find('span', {'class', 'ceNzKf'})
+    if p_score:
+        place_score = float(p_score['aria-label'].split()[0])
+    else:
         place_score = 0
 
     # get category
     place_detail = soup.find_all('div', {'class', 'skqShb'})
     place_category = place_detail[0].contents[1].text.replace(
         '·', '') if '·' in place_detail[0].contents[1].text else place_detail[0].contents[1].text
+    isExistRecord = False
 
     # add place data to dataframe
     place_data_df = pd.DataFrame(
@@ -204,10 +209,18 @@ def saveplacedetail(driver, lat, lon, place_url):
             place_data_df = pd.concat(
                 [existdata, place_data_df], ignore_index=True)
 
-    return [isExistRecord, place_name, place_data_df]
+    # save data to db
+    isExistVenueInDB = db.is_exist_venue(place_name)
+    # insert data to database
+    db_category_id = db.insert_category(place_category)
+    db_venue_id = db.insert_venue(place_name, place_score, lat, lon, place_url)
+    db.insert_venue_category(db_venue_id, db_category_id)
+
+    return [isExistRecord, place_name, place_data_df, db_venue_id]
 
 
-def loadfromfile():
+def loadfromfile(db):
+    global isSaveCsv
     with open('data/placelist.csv', newline='', encoding='utf-8') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=' ', quotechar=',')
 
@@ -237,10 +250,11 @@ def loadfromfile():
             # wait for loadcontent
             time.sleep(3.0)
 
-            existrecord, place_name, place_data_df = saveplacedetail(
-                driver, lat, lon, place_url)
+            existrecord, place_name, place_data_df, venue_id = saveplacedetail(
+                driver, lat, lon, place_url, db)
 
-            if existrecord:
+            # check exist data in place.csv file
+            if not isForceUpdate and existrecord:
                 driver.close()
                 continue
 
@@ -251,25 +265,23 @@ def loadfromfile():
                 ActionChains(driver).click(last_element).perform()
                 time.sleep(3.0)
                 scrollandload(driver)
-                data_loaded = loaddata(driver)
+                data_loaded = loaddata(driver, venue_id, db)
 
                 parent_dir = "results"
-
                 dircsv = "csv"
-
-                # save to csv
-                path = os.path.join(parent_dir, dircsv)
-                try:
-                    if not os.path.exists(path):
-                        os.makedirs(path, 0o666)
-                except OSError:
-                    print('Fatal: output directory "' + path +
-                          '" does not exist and cannot be created')
-                data_loaded.to_csv('results/csv/' + place_name +
-                                   '.csv', index=False, encoding='utf-8', sep='|')
-
-                place_data_df.to_csv('results/place.csv',
-                                     index=False, encoding='utf-8', sep='|')
+                if isSaveCsv:
+                    # save to csv
+                    path = os.path.join(parent_dir, dircsv)
+                    try:
+                        if not os.path.exists(path):
+                            os.makedirs(path, 0o666)
+                    except OSError:
+                        print('Fatal: output directory "' + path +
+                              '" does not exist and cannot be created')
+                    data_loaded.to_csv('results/csv/' + place_name +
+                                       '.csv', index=False, encoding='utf-8', sep='|')
+                    place_data_df.to_csv('results/place.csv',
+                                         index=False, encoding='utf-8', sep='|')
             else:
                 print('can\'t find review button')
                 continue
@@ -278,9 +290,28 @@ def loadfromfile():
 
 
 def main():
-    db = Rsdb()
-    db.drop_all_table()
+    global isSaveCsv
+    global isForceUpdate
 
+    isSaveCsv = False
+    isForceUpdate = False
+    if len(sys.argv) > 1:
+        # loop all argv
+        args = len(sys.argv) - 1
+        pos = 1
+        while (args >= pos):
+            if sys.argv[pos] == '--empty-db':
+                db = Rsdb()
+                db.drop_all_table()
+                db.close_connection()
+            if sys.argv[pos] == '--csv':
+                isSaveCsv = True
+            if sys.argv[pos] == '--force-update':
+                isForceUpdate = True
+            pos += 1
+
+    db = Rsdb()
+    loadfromfile(db)
     db.close_connection()
 
 

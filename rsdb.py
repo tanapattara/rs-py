@@ -25,21 +25,21 @@ class Rsdb:
             print("Table 'user' does not exist")
             # create table
             cursor.execute(
-                "CREATE TABLE user (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), link VARCHAR(255))")
+                "CREATE TABLE user (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), link LONGTEXT, reviews INT)")
             self.connection.commit()
             print("Table 'user' created")
 
-        cursor.execute("SHOW TABLES LIKE 'vanue'")
+        cursor.execute("SHOW TABLES LIKE 'venue'")
         result = cursor.fetchone()
         if result:
-            print("Table 'vanue' exists")
+            print("Table 'venue' exists")
         else:
-            print("Table 'vanue' does not exist")
+            print("Table 'venue' does not exist")
             # create table
             cursor.execute(
-                "CREATE TABLE vanue (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), score INT, latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, link VARCHAR(255))")
+                "CREATE TABLE venue (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), score DOUBLE PRECISION, latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, link LONGTEXT)")
             self.connection.commit()
-            print("Table 'vanue' created")
+            print("Table 'venue' created")
 
         cursor.execute("SHOW TABLES LIKE 'review'")
         result = cursor.fetchone()
@@ -49,7 +49,7 @@ class Rsdb:
             print("Table 'review' does not exist")
             # create table
             cursor.execute(
-                "CREATE TABLE review (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, vanue_id INT, score INT, time DOUBLE PRECISION, comment VARCHAR(255), link VARCHAR(255), review INT, FOREIGN KEY (user_id) REFERENCES user(id), FOREIGN KEY (vanue_id) REFERENCES vanue(id))")
+                "CREATE TABLE review (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, venue_id INT, score INT, time DOUBLE PRECISION, comment LONGTEXT, FOREIGN KEY (user_id) REFERENCES user(id), FOREIGN KEY (venue_id) REFERENCES venue(id))")
             self.connection.commit()
             print("Table 'review' created")
 
@@ -65,19 +65,31 @@ class Rsdb:
             self.connection.commit()
             print("Table 'category' created")
 
-        cursor.execute("SHOW TABLES LIKE 'vanue_category'")
+        cursor.execute("SHOW TABLES LIKE 'venue_category'")
         result = cursor.fetchone()
         if result:
-            print("Table 'vanue_category' exists")
+            print("Table 'venue_category' exists")
         else:
-            print("Table 'vanue_category' does not exist")
+            print("Table 'venue_category' does not exist")
             # create table
             cursor.execute(
-                "CREATE TABLE vanue_category (id INT AUTO_INCREMENT PRIMARY KEY, vanue_id INT, category_id INT, FOREIGN KEY (vanue_id) REFERENCES vanue(id), FOREIGN KEY (category_id) REFERENCES category(id))")
+                "CREATE TABLE venue_category (id INT AUTO_INCREMENT PRIMARY KEY, venue_id INT, category_id INT, FOREIGN KEY (venue_id) REFERENCES venue(id), FOREIGN KEY (category_id) REFERENCES category(id))")
             self.connection.commit()
-            print("Table 'vanue_category' created")
+            print("Table 'venue_category' created")
         # close cursor
         cursor.close()
+
+    def is_exist_venue(self, name):
+        cursor = self.connection.cursor()
+        sql_select = "SELECT id FROM venue WHERE name = %s"
+        val = (name,)
+        cursor.execute(sql_select, val)
+        result = cursor.fetchone()
+        cursor.close()
+        if result:
+            return True
+        else:
+            return False
 
     def get_connection(self):
         return self.connection
@@ -89,7 +101,7 @@ class Rsdb:
         self.connection.close()
         print("MySQL connection is closed")
 
-    def insert_user(self, name, link):
+    def insert_user(self, name, link, review):
         cursor = self.connection.cursor()
         # check exist data
         sql_select = "SELECT id FROM user WHERE name = %s"
@@ -101,8 +113,8 @@ class Rsdb:
             return result[0]
         else:
             # insert data
-            sql_insert = "INSERT INTO user (name, link) VALUES (%s, %s)"
-            val = (name, link)
+            sql_insert = "INSERT INTO user (name, link, reviews) VALUES (%s, %s, %s)"
+            val = (name, link, review)
             cursor.execute(sql_insert, val)
             self.connection.commit()
             val = (name,)
@@ -111,10 +123,10 @@ class Rsdb:
             cursor.close()
             return result[0]
 
-    def insert_vanue(self, name, score, latitude, longitude, link):
+    def insert_venue(self, name, score, latitude, longitude, link):
         cursor = self.connection.cursor()
         # check exist data
-        sql_select = "SELECT id FROM vanue WHERE name = %s"
+        sql_select = "SELECT id FROM venue WHERE name = %s"
         val = (name,)
         cursor.execute(sql_select, val)
         result = cursor.fetchone()
@@ -123,7 +135,7 @@ class Rsdb:
             return result[0]
         else:
             # insert data
-            sql_insert = "INSERT INTO vanue (name, score, latitude, longitude, link) VALUES (%s, %s, %s, %s, %s)"
+            sql_insert = "INSERT INTO venue (name, score, latitude, longitude, link) VALUES (%s, %s, %s, %s, %s)"
             val = (name, score, latitude, longitude, link)
             cursor.execute(sql_insert, val)
             self.connection.commit()
@@ -133,11 +145,11 @@ class Rsdb:
             cursor.close()
             return result[0]
 
-    def insert_review(self, user_id, vanue_id, score, time, comment, link, review):
+    def insert_review(self, user_id, venue_id, score, time, comment):
         curser = self.connection.cursor()
         # check exist data
-        sql_select = "SELECT id FROM review WHERE user_id = %s AND vanue_id = %s"
-        val = (user_id, vanue_id)
+        sql_select = "SELECT id FROM review WHERE user_id = %s AND venue_id = %s"
+        val = (user_id, venue_id)
         curser.execute(sql_select, val)
         result = curser.fetchone()
         if result:
@@ -145,11 +157,11 @@ class Rsdb:
             return result[0]
         else:
             # insert data
-            sql_insert = "INSERT INTO review (user_id, vanue_id, score, time, comment, link, review) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            val = (user_id, vanue_id, score, time, comment, link, review)
+            sql_insert = "INSERT INTO review (user_id, venue_id, score, time, comment) VALUES (%s, %s, %s, %s, %s)"
+            val = (user_id, venue_id, score, time, comment)
             curser.execute(sql_insert, val)
             self.connection.commit()
-            val = (user_id, vanue_id)
+            val = (user_id, venue_id)
             curser.execute(sql_select, val)
             result = curser.fetchone()
             curser.close()
@@ -177,11 +189,11 @@ class Rsdb:
             curser.close()
             return result[0]
 
-    def insert_vanue_category(self, vanue_id, category_id):
+    def insert_venue_category(self, venue_id, category_id):
         curser = self.connection.cursor()
         # check exist data
-        sql_select = "SELECT id FROM vanue_category WHERE vanue_id = %s AND category_id = %s"
-        val = (vanue_id, category_id)
+        sql_select = "SELECT id FROM venue_category WHERE venue_id = %s AND category_id = %s"
+        val = (venue_id, category_id)
         curser.execute(sql_select, val)
         result = curser.fetchone()
         if result:
@@ -189,11 +201,11 @@ class Rsdb:
             return result[0]
         else:
             # insert data
-            sql_insert = "INSERT INTO vanue_category (vanue_id, category_id) VALUES (%s, %s)"
-            val = (vanue_id, category_id)
+            sql_insert = "INSERT INTO venue_category (venue_id, category_id) VALUES (%s, %s)"
+            val = (venue_id, category_id)
             curser.execute(sql_insert, val)
             self.connection.commit()
-            val = (vanue_id, category_id)
+            val = (venue_id, category_id)
             curser.execute(sql_select, val)
             result = curser.fetchone()
             curser.close()
@@ -202,7 +214,7 @@ class Rsdb:
     def drop_all_table(self):
         cursor = self.connection.cursor()
         cursor.execute(
-            "DROP TABLE user, vanue, review, category, vanue_category")
+            "DROP TABLE review, venue_category, user, venue, category")
         cursor.close()
         print("All tables dropped")
 
