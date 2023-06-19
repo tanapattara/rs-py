@@ -79,7 +79,7 @@ def convertTime(ttext):
         return float(0.1)
 
 
-def loaddata(driver, db, place_name, place_category, place_score, lat, lon, place_url, titlenbar):
+def loaddata(driver, db, place_name, place_category, place_score, lat, lon, place_url, place_location, titlenbar):
 
     # get more review button
     more_review_btn_elements = driver.find_elements(
@@ -100,7 +100,7 @@ def loaddata(driver, db, place_name, place_category, place_score, lat, lon, plac
     # insert data to database
     db_category_id = db.insert_category(place_category)
     db_venue_id = db.insert_venue(
-        place_name, place_score, lat, lon, place_url)
+        place_name, place_score, lat, lon, place_url, place_location)
     db.insert_venue_category(db_venue_id, db_category_id)
 
     with alive_bar(len(all_review_score), title=titlenbar) as bar:
@@ -161,7 +161,9 @@ def get_and_check_venue(driver, db):
     if db_venue_id:
         isExistRecord = True
         place_category = db.get_venue_category(db_venue_id)
-        place_score = db.get_venue_score(db_venue_id)
+        place = db.get_venue_data(db_venue_id)
+        place_score = place[2]
+        place_location = place[5]
     else:
         p_score = soup.find('span', {'class', 'ceNzKf'})
         if p_score:
@@ -172,11 +174,17 @@ def get_and_check_venue(driver, db):
         place_detail = soup.find_all('div', {'class', 'skqShb'})
         place_category = place_detail[0].contents[1].text.replace(
             '·', '') if '·' in place_detail[0].contents[1].text else place_detail[0].contents[1].text
+        place_location = soup.find(
+            'div', {'class': 'Io6YTe fontBodyMedium kR99db'})
+        if place_location:
+            place_location = place_location.text
+        else:
+            place_location = ""
 
-    return [isExistRecord, db_venue_id, place_name, place_category, place_score]
+    return [isExistRecord, db_venue_id, place_name, place_category, place_score, place_location]
 
 
-def saveplacedetail(driver, lat, lon, place_url, db):
+def saveplacedetail(driver, lat, lon, place_url, place_location, db):
     # get name of place
     data = driver.page_source
     soup = bs4.BeautifulSoup(data, "lxml")
@@ -211,7 +219,7 @@ def saveplacedetail(driver, lat, lon, place_url, db):
         # insert data to database
         db_category_id = db.insert_category(place_category)
         db_venue_id = db.insert_venue(
-            place_name, place_score, lat, lon, place_url)
+            place_name, place_score, lat, lon, place_url, place_location)
         db.insert_venue_category(db_venue_id, db_category_id)
 
     return [isExistRecord, place_name, db_venue_id]
@@ -258,7 +266,7 @@ def loadfromfile(db):
             time.sleep(3.0)
 
             # check exist record
-            existrecord, venue_id, place_name, place_category, place_score = get_and_check_venue(
+            existrecord, venue_id, place_name, place_category, place_score, place_location = get_and_check_venue(
                 driver, db)
 
             # check exist data in place.csv file
@@ -275,7 +283,7 @@ def loadfromfile(db):
                 scrollandload(driver)
                 titlenbar = "Place " + str(iplace) + " : " + place_name + " : "
                 loaddata(driver, db, place_name, place_category,
-                         place_score, lat, lon, place_url, titlenbar)
+                         place_score, lat, lon, place_url, place_location, titlenbar)
             else:
                 print('can\'t find review button')
                 continue

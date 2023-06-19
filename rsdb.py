@@ -47,10 +47,12 @@ class Rsdb:
                 CREATE TABLE venue (
                     id INT AUTO_INCREMENT PRIMARY KEY, 
                     name VARCHAR(255), 
-                    score DOUBLE PRECISION, 
-                    latitude DOUBLE PRECISION, 
-                    longitude DOUBLE PRECISION,
-                    link LONGTEXT,
+                    score DOUBLE PRECISION DEFAULT NULL, 
+                    latitude DOUBLE PRECISION DEFAULT NULL, 
+                    longitude DOUBLE PRECISION DEFAULT NULL,
+                    link LONGTEXT DEFAULT NULL,
+                    location LONGTEXT DEFAULT NULL,
+                    province VARCHAR(255) DEFAULT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)                
                 ''')
@@ -149,7 +151,7 @@ class Rsdb:
         cursor.execute(sql_select)
         users = cursor.fetchall()
         cursor.close()
-        return users[0]
+        return users
 
     def get_venue_category(self, venue_id):
         cursor = self.connection.cursor()
@@ -166,14 +168,14 @@ class Rsdb:
         cursor.close()
         return category_name[0]
 
-    def get_venue_score(self, venue_id):
+    def get_venue_data(self, venue_id):
         cursor = self.connection.cursor()
-        sql_select = "SELECT score FROM venue WHERE id = %s"
+        sql_select = "SELECT * FROM venue WHERE id = %s"
         val = (venue_id,)
         cursor.execute(sql_select, val)
         score = cursor.fetchone()
         cursor.close()
-        return score[0]
+        return score
 
     def get_connection(self):
         return self.connection
@@ -207,7 +209,7 @@ class Rsdb:
             cursor.close()
             return result[0]
 
-    def insert_venue(self, name, score, latitude, longitude, link):
+    def insert_venue(self, name, score, latitude, longitude, link, venue_location):
         cursor = self.connection.cursor()
         # check exist data
         sql_select = "SELECT id FROM venue WHERE name = %s"
@@ -216,8 +218,8 @@ class Rsdb:
         result = cursor.fetchone()
         if result:
             venue_id = result[0]
-            sql_update = "UPDATE venue SET score = %s, latitude = %s, longitude = %s, link = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s"
-            val = (score, latitude, longitude, link, venue_id)
+            sql_update = "UPDATE venue SET score = %s, latitude = %s, longitude = %s, link = %s, location = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s"
+            val = (score, latitude, longitude, link, venue_location, venue_id)
             cursor.execute(sql_update, val)
             self.connection.commit()
             cursor.fetchone()
@@ -225,8 +227,8 @@ class Rsdb:
             return venue_id
         else:
             # insert data
-            sql_insert = "INSERT INTO venue (name, score, latitude, longitude, link) VALUES (%s, %s, %s, %s, %s)"
-            val = (name, score, latitude, longitude, link)
+            sql_insert = "INSERT INTO venue (name, score, latitude, longitude, link, location) VALUES (%s, %s, %s, %s, %s, %s)"
+            val = (name, score, latitude, longitude, link, venue_location)
             cursor.execute(sql_insert, val)
             self.connection.commit()
             val = (name,)

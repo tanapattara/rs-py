@@ -53,7 +53,7 @@ def getTime(timetext):
     return 0.1
 
 
-def scrollandload(uid, driver):
+def scrollandload(driver, user_id):
 
     try:
         review_element = driver.find_element(By.CLASS_NAME, 'TiFmlb')
@@ -103,35 +103,29 @@ def scrollandload(uid, driver):
     data = driver.page_source
     soup = bs4.BeautifulSoup(data, "lxml")
 
-    title = []
-    location = []
-    score = []
-    times = []
-    comment = []
-    uids = []
+    review_elements = soup.find_all(
+        'div', {'class': 'jftiEf fontBodyMedium t2Acle FwTFEc azD0p'})
+    for review in review_elements:
+        venue_name = review.find_element('div', {'class': 'd4r55 YJxk2d'}).text
+        venue_location = review.find_element(
+            'div', {'class': 'RfnDt xJVozb'}).text
+        review_score = int(review.find_element(
+            'span', {'class': 'kvMYJc'})['aria-label'])
+        review_time = getTime(review.find_element(
+            'span', {'class': 'rsqaWe'}).text)
+        review_comment = review.find_element('span', {'class': 'wiI7pd'}).text
 
-    element = soup.find_all('div', {'class': 'd4r55 YJxk2d'})
-    for row in element:
-        title.append(row.text.strip())
-        uids.append(uid)
-    element = soup.find_all('div', {'class': 'RfnDt xJVozb'})
-    for row in element:
-        location.append(row.text.replace('-', '').strip())
-    element = soup.find_all('span', {'class': 'kvMYJc'})
-    for row in element:
-        s = int(row['aria-label'].replace('ดาว', '').strip())
-        score.append(s)
-    element = soup.find_all('span', {'class': 'wiI7pd'})
-    for row in element:
-        comment.append(row.next)
-    element = soup.find_all('span', {'class': 'rsqaWe'})
-    for row in element:
-        timevalue = getTime(row.next)
-        times.append(timevalue)
-
-    df = pd.DataFrame(list(zip(uids, title, location, score, times, comment)), columns=[
-                      'userid', 'venue_name', 'vanue_location', 'score', 'time', 'comment'])
-    return True, False, df
+        # check venue name
+        venue_id = db.is_exist_venue(venue_name)
+        if venue_id:
+            # add review
+            # insert_review(user_id, venue_id, score, time, comment):
+            db.insert_review(user_id, venue_id, review_score,
+                             review_time, review_comment)
+        else:
+            # add venue
+            # insert_venue(name, score, latitude, longitude, link):
+            db.insert_venue(venue_name, 0, 0, 0, "", venue_location)
 
 
 def isLoaded(name):
@@ -170,44 +164,24 @@ def loacFromCSV():
             driver = webdriver.Chrome(options=chrome_options)
             driver.get(ulink)
 
-            loaded, iserror, df = scrollandload(uid, driver)
-            if loaded:
-                df.to_csv('results/user/' + uname + '.csv',
-                          index=False, encoding='utf-8', sep='|')
-            else:
-                # new data
-                msg = "nocomment"
-                if iserror:
-                    msg = "error"
-
-                newdata = pd.DataFrame([uid, uname, ulink, msg])
-                newdata = newdata.transpose()
-                newdata.columns = ['userid', 'name', 'link', 'msg']
-
-                # empty user
-                path_to_file = 'data\emptyuser.csv'
-                if os.path.exists(path_to_file):
-                    existdata = pd.read_csv(
-                        path_to_file, sep='|', encoding='utf-8')
-                    newdata = pd.concat(
-                        [existdata, newdata], ignore_index=True)
-
-                newdata.to_csv(path_to_file, index=False,
-                               encoding='utf-8', sep='|')
+            loaded, iserror, df = scrollandload(uid, driver, uid)
 
             driver.close()
 
 
 def main():
     db = Rsdb()
-    users = db.getUsers()
+    users = db.get_users()
     with alive_bar(len(users), title='Reading user:', dual_line=True) as bar:
-        for i, user in users:
-            user_id = user['id']
-            user_link = user['link']
+        for user in users:
+            user_id = user[0]
+            user_name = user[1]
+            user_link = user[2]
+            user_review = user[3]
 
             # open user profile
             chrome_options = Options()
+            chrome_options.add_argument("--headless")
             chrome_options.add_argument("--dns-prefetch-disable")
             chrome_options.add_experimental_option(
                 "excludeSwitches", ["enable-logging"])
@@ -216,7 +190,7 @@ def main():
             driver.get(user_link)
             # wait for loadcontent
             time.sleep(3.0)
-            loaded, iserror, df = scrollandload(uid, driver)
+            loaded, iserror, df = scrollandload(driver)
 
             bar()
     db.close_connection()
