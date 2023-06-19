@@ -247,8 +247,8 @@ class Rsdb:
         result = cursor.fetchone()
         if result:
             review_id = result[0]
-            sql_update = "UPDATE review SET comment = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s"
-            val = (comment, review_id)
+            sql_update = "UPDATE review SET score = %s, comment = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s"
+            val = (score, comment, review_id)
             cursor.execute(sql_update, val)
             self.connection.commit()
             cursor.fetchone()

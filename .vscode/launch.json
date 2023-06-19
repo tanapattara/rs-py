@@ -5,25 +5,25 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Googleplace",
+      "name": "Run",
       "type": "python",
       "request": "launch",
-      "program": "googleplace.py",
+      "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true
     },
     {
-      "name": "Debug Googleplace",
+      "name": "Debug",
       "type": "python",
       "request": "launch",
-      "program": "googleplace.py",
+      "program": "${file}",
       "console": "internalConsole"
     },
     {
-      "name": "Debug Googleplace force-update",
+      "name": "Debug --force-update",
       "type": "python",
       "request": "launch",
-      "program": "googleplace.py",
+      "program": "${file}",
       "args": ["--force-update"],
       "console": "internalConsole"
     }
