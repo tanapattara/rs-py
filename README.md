@@ -89,10 +89,10 @@ python googleplace_contrib.py
 
 จากการทำงานข้อที่ 2. เราจะได้ข้อมูลสถานที่ ขั้นตอนนี้เราจะเข้าไปเอาข้อมูลของสถานที่มาเพิ่มเติม โดยอ้างอิงจาก **ชื่อสถานที่** ที่เราได้จากข้อที่ 2.
 
-คำสั่งที่ใช้ทำงานไฟล์ `googleplace_vanue.py`
+คำสั่งที่ใช้ทำงานไฟล์ `googleplace_venue.py`
 
 ```batch
-python googleplace_vanue.py
+python googleplace_venue.py
 ```
 
 # Entity Relationship Diagrams
