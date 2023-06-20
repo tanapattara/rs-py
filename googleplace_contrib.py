@@ -17,6 +17,7 @@ from selenium.common.exceptions import InvalidArgumentException
 from alive_progress import alive_bar
 
 from rsdb import Rsdb
+from util import Util
 
 import bs4
 import pandas as pd
@@ -68,6 +69,7 @@ def scrollandload(driver, db, user_id, titlebar):
     scoll = 2
     temp = 0
 
+    # scroll and load all review
     while loaded < allreview:
         try:
             iframe = driver.find_element(By.CLASS_NAME, "m6QErb")
@@ -103,6 +105,16 @@ def scrollandload(driver, db, user_id, titlebar):
     data = driver.page_source
     soup = bs4.BeautifulSoup(data, "lxml")
 
+    # get more button
+    more_review_btn_elements = driver.find_elements(
+        By.CSS_SELECTOR, 'button.w8nwRe.kyuRq')
+    for more_btn in more_review_btn_elements:
+        try:
+            if more_btn:
+                ActionChains(driver).click(more_btn).perform()
+        except Exception as e:
+            print("no button to click", end='\r')
+    # get all review
     review_elements = soup.find_all(
         'div', {'class': 'jftiEf fontBodyMedium t2Acle FwTFEc azD0p'})
     with alive_bar(len(review_elements), title=titlebar, dual_line=True) as bar:
@@ -121,6 +133,8 @@ def scrollandload(driver, db, user_id, titlebar):
             else:
                 review_comment = ""
 
+            venue_province = Util.getProvince(venue_location)
+
             # check venue name
             venue_id = db.is_exist_venue(venue_name)
             if venue_id:
@@ -131,7 +145,7 @@ def scrollandload(driver, db, user_id, titlebar):
                 # add venue
                 # insert_venue(self, name, score, latitude, longitude, link, venue_location):
                 venue_id = db.insert_venue(
-                    venue_name, 0, 0, 0, "", venue_location)
+                    venue_name, 0, 0, 0, "", venue_location, venue_province)
                 db.insert_review(user_id, venue_id, review_score,
                                  review_time, review_comment)
             bar()

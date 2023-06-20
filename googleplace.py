@@ -10,7 +10,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from alive_progress import alive_bar
+
 from rsdb import Rsdb
+from util import Util
 
 import bs4
 import pandas as pd
@@ -97,10 +99,12 @@ def loaddata(driver, db, place_name, place_category, place_score, lat, lon, plac
     soup = bs4.BeautifulSoup(data, "lxml")
     all_review_score = soup.find_all('div', {'class': 'jftiEf fontBodyMedium'})
 
+    venue_province = Util.getProvince(place_location)
+
     # insert data to database
     db_category_id = db.insert_category(place_category)
     db_venue_id = db.insert_venue(
-        place_name, place_score, lat, lon, place_url, place_location)
+        place_name, place_score, lat, lon, place_url, place_location, venue_province)
     db.insert_venue_category(db_venue_id, db_category_id)
 
     with alive_bar(len(all_review_score), title=titlenbar) as bar:
@@ -216,10 +220,12 @@ def saveplacedetail(driver, lat, lon, place_url, place_location, db):
         place_data_df.columns = ['name', 'score',
                                  'category', 'latitude', 'longitude', 'link']
 
+        venue_province = Util.getProvince(place_location)
+
         # insert data to database
         db_category_id = db.insert_category(place_category)
         db_venue_id = db.insert_venue(
-            place_name, place_score, lat, lon, place_url, place_location)
+            place_name, place_score, lat, lon, place_url, place_location, venue_province)
         db.insert_venue_category(db_venue_id, db_category_id)
 
     return [isExistRecord, place_name, db_venue_id]

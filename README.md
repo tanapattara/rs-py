@@ -65,7 +65,7 @@ erDiagram
         string name
         string link
     }
-    REVIEW }|--|| VANUE : review
+    REVIEW }|--|| venue : review
     REVIEW {
         int id
         int user_id
@@ -76,8 +76,8 @@ erDiagram
         string link
         string review
     }
-    VANUE ||--|| VANUE_CATEGORY : category
-     VANUE {
+    venue ||--|| venue_CATEGORY : category
+     venue {
         int id
         string name
         int score
@@ -85,10 +85,10 @@ erDiagram
         double longitude
         string link
     }
-    VANUE_CATEGORY ||--|| CATEGORY : category
-    VANUE_CATEGORY{
+    venue_CATEGORY ||--|| CATEGORY : category
+    venue_CATEGORY{
       int id
-      int vanue_id
+      int venue_id
       int category_id
     }
     CATEGORY{
