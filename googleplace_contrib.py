@@ -131,7 +131,7 @@ def scrollandload(driver, db, user_id, titlebar):
             if review_comment:
                 review_comment = review_comment.text
             else:
-                review_comment = ""
+                review_comment = None
 
             venue_province = Util.getProvince(venue_location)
 
@@ -145,7 +145,7 @@ def scrollandload(driver, db, user_id, titlebar):
                 # add venue
                 # insert_venue(self, name, score, latitude, longitude, link, venue_location):
                 venue_id = db.insert_venue(
-                    venue_name, 0, 0, 0, "", venue_location, venue_province)
+                    venue_name, None, None, None, None, venue_location, venue_province)
                 db.insert_review(user_id, venue_id, review_score,
                                  review_time, review_comment)
             bar()

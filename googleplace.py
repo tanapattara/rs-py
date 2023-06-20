@@ -107,7 +107,7 @@ def loaddata(driver, db, place_name, place_category, place_score, lat, lon, plac
         place_name, place_score, lat, lon, place_url, place_location, venue_province)
     db.insert_venue_category(db_venue_id, db_category_id)
 
-    with alive_bar(len(all_review_score), title=titlenbar) as bar:
+    with alive_bar(len(all_review_score), title=titlenbar, dual_line=True) as bar:
         for review_element in all_review_score:
 
             name = review_element['aria-label']

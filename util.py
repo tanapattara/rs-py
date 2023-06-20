@@ -45,6 +45,9 @@ class Util:
             
     @staticmethod
     def getProvince(address):
+        if address is None:
+            return None
+            
         if "-" in address:
             address = address.replace("-", " ")
 

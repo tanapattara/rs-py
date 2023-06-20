@@ -32,68 +32,77 @@ def main():
 
     venues = db.get_empty_venues()
     base_url = "https://www.google.co.th/maps/search/"
-    for venue in venues:
-        venue_id = venue[0]
-        venue_name = venue[1]
+    titlebar = "Get venue details"
+    with alive_bar(len(venues), title=titlebar, dual_line=True) as bar:
+        for venue in venues:
+            venue_id = venue[0]
+            venue_name = venue[1]
 
-        chrome_options = Options()
-        chrome_options.add_argument("--dns-prefetch-disable")
-        chrome_options.add_experimental_option(
-            "excludeSwitches", ["enable-logging"])
+            titlebar = "Update venue : " + \
+                str(venue_id) + " of " + str(len(venues))
 
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.get(base_url + venue_name)
-        time.sleep(3.0)
+            chrome_options = Options()
+            chrome_options.add_argument("--dns-prefetch-disable")
+            chrome_options.add_experimental_option(
+                "excludeSwitches", ["enable-logging"])
 
-        data = driver.page_source
-        soup = bs4.BeautifulSoup(data, "lxml")
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.get(base_url + venue_name)
+            time.sleep(3.0)
 
-        # check search results
-        search_results = soup.find_all(
-            'div', {'class': 'Nv2PK Q2HXcd THOPZb'})
-        if len(search_results) > 0:
-            continue
+            data = driver.page_source
+            soup = bs4.BeautifulSoup(data, "lxml")
 
-        venue_score = soup.find('span', {'class': 'ceNzKf'})
-        venue_score = Util.convertStar(
-            venue_score['aria-label']) if venue_score else 0.0
+            # check search results
+            search_results = soup.find_all(
+                'div', {'class': 'Nv2PK Q2HXcd THOPZb'})
+            if len(search_results) > 0:
+                continue
 
-        venue_category = soup.find('button', {'class': 'DkEaL'})
-        venue_category = venue_category.text if venue_category else ""
+            venue_score = soup.find('span', {'class': 'ceNzKf'})
+            venue_score = Util.convertStar(
+                venue_score['aria-label']) if venue_score else 0.0
 
-        venue_location = soup.find(
-            'div', {'class': 'Io6YTe fontBodyMedium kR99db'})
-        venue_location = venue_location.text if venue_location else ""
+            venue_category = soup.find('button', {'class': 'DkEaL'})
+            venue_category = venue_category.text if venue_category else None
 
-        venue_province = Util.getProvince(venue_location)
+            venue_location = soup.find(
+                'div', {'class': 'Io6YTe fontBodyMedium kR99db'})
+            venue_location = venue_location.text if venue_location else None
 
-        # get current url
-        url = driver.current_url
-        surl = url.split('/')
-        locations = [x for x in surl if "@" in x]
-        if len(locations) > 1:
-            i = 0
-            for loc in locations:
-                if len(loc.split(',')) == 3:
-                    break
-                i += 1
-            locations = locations[i]
-        else:
-            locations = locations[0]
+            venue_province = Util.getProvince(venue_location)
 
-        lat = float(locations.split(',')[0].replace('@', ''))
-        lon = float(locations.split(',')[1])
+            # get current url
+            url = driver.current_url
+            surl = url.split('/')
+            locations = [x for x in surl if "@" in x]
+            if len(locations) > 1:
+                i = 0
+                for loc in locations:
+                    if len(loc.split(',')) == 3:
+                        break
+                    i += 1
+                locations = locations[i]
+            else:
+                locations = locations[0]
 
-        # update category
-        venue_category_id = db.insert_category(venue_category)
-        # update venue
-        db.insert_venue_category(venue_id, venue_category_id)
-        venue_id = db.insert_venue(venue_name, venue_score, lat,
-                                   lon, url, venue_location, venue_province)
-        if venue_id:
-            print("Update venue: " + venue_name)
+            lat = float(locations.split(',')[0].replace('@', ''))
+            lon = float(locations.split(',')[1])
+            if venue_category != None and venue_category.strip() != "":
+                # update category
+                venue_category_id = db.insert_category(venue_category)
+                # update venue
+                db.insert_venue_category(venue_id, venue_category_id)
 
-        driver.close()
+            if "search" in url:
+                url = None
+
+            venue_id = db.insert_venue(venue_name, venue_score, lat,
+                                       lon, url, venue_location, venue_province)
+            if venue_id:
+                print("Update venue: " + venue_name)
+            bar()
+            driver.close()
     db.close_connection()
 
 

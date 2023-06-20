@@ -28,8 +28,8 @@ class Rsdb:
                 CREATE TABLE user (
                     id INT AUTO_INCREMENT PRIMARY KEY, 
                     name VARCHAR(255), 
-                    link LONGTEXT, 
-                    reviews INT, 
+                    link LONGTEXT DEFAULT NULL, 
+                    reviews INT DEFAULT NULL, 
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)
                 ''')
@@ -72,8 +72,8 @@ class Rsdb:
                     user_id INT, 
                     venue_id INT, 
                     score INT, 
-                    time DOUBLE PRECISION, 
-                    comment LONGTEXT, 
+                    time DOUBLE PRECISION DEFAULT NULL, 
+                    comment LONGTEXT DEFAULT NULL, 
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES user(id), 
@@ -160,7 +160,7 @@ class Rsdb:
 
     def get_empty_venues(self):
         cursor = self.connection.cursor()
-        sql_select = "SELECT * FROM venue WHERE score = 0"
+        sql_select = "SELECT * FROM venue WHERE score is NULL"
         cursor.execute(sql_select)
         venues = cursor.fetchall()
         cursor.close()
