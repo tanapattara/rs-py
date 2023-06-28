@@ -50,6 +50,7 @@ def scroll_down(driver):
         i = 0
         while i < n:
             body.send_keys(Keys.PAGE_DOWN)
+            print("Scorlling down...", end='\r')
             time.sleep(1)
             i += 1
 
@@ -84,7 +85,7 @@ def main():
             driver = webdriver.Chrome(options=options)
             driver.get(youtube_url)
             # wait for loadcontent
-            time.sleep(5.0)
+            time.sleep(10.0)
 
             # scroll down
             scroll_down(driver)
@@ -100,10 +101,12 @@ def main():
             # create file if not exist
             if not os.path.exists(filepath):
                 # create file
-                open(filepath, 'x', newline='', encoding='utf-8')
+                open(filepath, 'x', encoding='utf-8')
+                print("Create file: " + filepath)
 
+            print("Save to file: " + filepath)
             # append file
-            with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+            with open(filepath, 'w', encoding='utf-8') as csvfile:
                 spamwriter = csv.writer(
                     csvfile, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 for comment in comment_element:
