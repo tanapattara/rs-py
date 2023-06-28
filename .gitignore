@@ -128,9 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-results/csv/*
-results/user/*
-results/place.csv
+results/*.csv
 data/rating.csv
 data/user.csv
 data/venue.csv
